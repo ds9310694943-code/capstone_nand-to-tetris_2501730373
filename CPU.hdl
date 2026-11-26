@@ -1,0 +1,47 @@
+// CPU.hdl - Hack CPU
+// Roll No 2501730373, K = 73
+// Uses basic gates (Not, And, Or, Mux16) with the built-in ALU,
+// ARegister, DRegister and PC chips.
+CHIP CPU {
+    IN  inM[16], instruction[16], reset;
+    OUT outM[16], writeM, addressM[15], pc[15];
+
+    PARTS:
+    // instruction[15]: 0 = A-instruction, 1 = C-instruction
+    Not(in=instruction[15], out=aInstr);
+    And(a=instruction[15], b=true, out=cInstr);
+
+    // ---- A register: gets the instruction (A-instr) or the ALU result ----
+    Mux16(a=instruction, b=aluResult, sel=cInstr, out=aRegIn);
+    And(a=cInstr, b=instruction[5], out=cDestA);        // d1
+    Or(a=aInstr, b=cDestA, out=aLoad);
+    ARegister(in=aRegIn, load=aLoad, out=aRegOut, out[0..14]=addressM);
+
+    // ---- D register ----
+    And(a=cInstr, b=instruction[4], out=dLoad);         // d2
+    DRegister(in=aluResult, load=dLoad, out=dRegOut);
+
+    // ---- ALU: y input is A or M, chosen by the a-bit (bit 12) ----
+    Mux16(a=aRegOut, b=inM, sel=instruction[12], out=yInput);
+    ALU(x=dRegOut, y=yInput,
+        zx=instruction[11], nx=instruction[10],
+        zy=instruction[9],  ny=instruction[8],
+        f=instruction[7],   no=instruction[6],
+        out=aluResult, out=outM, zr=isZero, ng=isNeg);
+
+    // ---- writeM: dest bit d3 (bit 3), only for C-instructions ----
+    And(a=cInstr, b=instruction[3], out=writeM);
+
+    // ---- jump: j1=bit2 (<0), j2=bit1 (=0), j3=bit0 (>0) ----
+    Or(a=isZero, b=isNeg, out=notPositive);
+    Not(in=notPositive, out=isPos);
+    And(a=instruction[2], b=isNeg,  out=jumpLT);
+    And(a=instruction[1], b=isZero, out=jumpEQ);
+    And(a=instruction[0], b=isPos,  out=jumpGT);
+    Or(a=jumpLT, b=jumpEQ, out=jumpLE);
+    Or(a=jumpLE, b=jumpGT, out=jumpAny);
+    And(a=cInstr, b=jumpAny, out=doJump);
+
+    // ---- Program counter ----
+    PC(in=aRegOut, load=doJump, inc=true, reset=reset, out[0..14]=pc);
+}

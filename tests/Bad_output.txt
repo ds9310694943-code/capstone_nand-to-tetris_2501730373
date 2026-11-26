@@ -1,0 +1,7 @@
+Line 5: invalid instruction 'D=D+Q' (bad computation 'D+Q')
+Line 6: invalid instruction: '@100000' value exceeds 32767
+Line 8: label 'LOOP' already defined
+Line 9: invalid instruction 'D;JXX' (bad jump 'JXX')
+Line 10: invalid instruction 'X=D' (bad destination 'X')
+Line 11: invalid instruction: '@' has no value or symbol
+tests/Bad.asm: 6 error(s) found - no .hack file written

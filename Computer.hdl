@@ -1,0 +1,11 @@
+// Computer.hdl - ROM32K + CPU + Memory
+// Roll No 2501730373, K = 73
+CHIP Computer {
+    IN reset;
+
+    PARTS:
+    ROM32K(address=pc, out=instruction);
+    CPU(inM=memOut, instruction=instruction, reset=reset,
+        outM=cpuOut, writeM=cpuWrite, addressM=cpuAddr, pc=pc);
+    Memory(in=cpuOut, load=cpuWrite, address=cpuAddr, out=memOut);
+}
